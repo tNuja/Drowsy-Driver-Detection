@@ -12,27 +12,27 @@ import dlib
 import playsound
 
 #For eye aspect ratio to indicate blink
-EYE_AR_THRESH = 0.18
+eye_thresh = 0.18
 #Number of consecutive frames the eye must be below the threshold for to set off the alarm
-EYE_AR_CONSEC_FRAMES = 7
+max_consec_frames = 7
 #For mouth aspect ratio to indicate jaw opening 
-MOUTH_AR_THRESH = 0.30
+mouth_thresh = 0.30
 
-SHOW_POINTS_FACE = False
-SHOW_CONVEX_HULL_FACE = False
-SHOW_INFO = False
+show_points = False
+show_conv_hull = False
+show_info = False
 #To store calculated value of eye_aspect_ratio
 ear = 0
 #To store calculated value of mouth_aspect-ratio
 mar = 0
 #To Count Number Of Frames for eyes 
-COUNTER_FRAMES_EYE = 0
+count_fr_eye = 0
 #To Count Number Of Frames for mouth
-COUNTER_FRAMES_MOUTH = 0
+count_fr_mouth = 0
 #To Count eyes blink
-COUNTER_BLINK = 0
+blink_count = 0
 #To Count Mouth Opening
-COUNTER_MOUTH = 0
+yawn_count = 0
 
 #Funtion to Calculate eye_aspect_ratio
 def eye_aspect_ratio(eye):
@@ -118,12 +118,12 @@ while(True):
         (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
         (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
 
-        if SHOW_POINTS_FACE:
+        if show_points:
             for p in image_points:
                 cv2.circle(frame, (int(p[0]), int(p[1])), 3, (0,0,255), -1)
 
         
-        if SHOW_CONVEX_HULL_FACE: 
+        if show_conv_hull: 
             # compute the convex hull for the left and right eye and mouth, then
 		      # visualize each of the eyes and mouth
             leftEyeHull = cv2.convexHull(leftEye)
@@ -134,45 +134,45 @@ while(True):
             cv2.drawContours(frame, [jawHull], 0, (255, 255, 255), 1)
 
 
-        if COUNTER_BLINK > 10 or COUNTER_MOUTH > 2:
+        if blink_count > 10 or yawn_count > 2:
             cv2.putText(frame, "Alert!", (200, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             playsound.playsound('beep1.mp3')
             
             
 		# check to see if the eye aspect ratio is below the blink threshold, and if so, increment the blink frame counter
-        if ear < EYE_AR_THRESH:
-            COUNTER_FRAMES_EYE += 1
+        if ear < eye_thresh:
+            count_fr_eye += 1
             #If eyes is closed for sufficent number of frames then sound the alarm
-            if COUNTER_FRAMES_EYE >= EYE_AR_CONSEC_FRAMES:
+            if count_fr_eye >= max_consec_frames:
                 cv2.putText(frame, "Sleeping Driver!", (200, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                 playsound.playsound('beep1.mp3')
         else:
-            if COUNTER_FRAMES_EYE > 2:
-                COUNTER_BLINK += 1
-            COUNTER_FRAMES_EYE = 0
+            if count_fr_eye > 2:
+                blink_count += 1
+            count_fr_eye = 0
         # check to see if the mouth aspect ratio is below the opening threshold, and if so, increment the mouth frame counter
-        if mar >= MOUTH_AR_THRESH:
-            COUNTER_FRAMES_MOUTH += 1
+        if mar >= mouth_thresh:
+            count_fr_mouth += 1
         else:
-            if COUNTER_FRAMES_MOUTH > 5:
-                COUNTER_MOUTH += 1
+            if count_fr_mouth > 5:
+                yawn_count += 1
       
-            COUNTER_FRAMES_MOUTH = 0
+            count_fr_mouth = 0
         
         if (time.time() - t_end) > 60:
             t_end = time.time()
-            COUNTER_BLINK = 0
-            COUNTER_MOUTH = 0
+            blink_count = 0
+            yawn_count = 0
         
-    if SHOW_INFO:
+    if show_info:
         cv2.putText(frame, "EAR: {:.2f}".format(ear), (30, 450),
             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
         cv2.putText(frame, "MAR: {:.2f}".format(mar), (200, 450),
             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
-        cv2.putText(frame, "Blinks: {}".format(COUNTER_BLINK), (10, 30),
+        cv2.putText(frame, "Blinks: {}".format(blink_count), (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
-        cv2.putText(frame, "Mouths: {}".format(COUNTER_MOUTH), (10, 60),
+        cv2.putText(frame, "Mouths: {}".format(yawn_count), (10, 60),
             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
     #Show the frame
     cv2.imshow("Output", frame)
@@ -182,11 +182,11 @@ while(True):
     if key == ord('q'):
         break
     if key == ord('p'):
-        SHOW_POINTS_FACE = not SHOW_POINTS_FACE
+        show_points = not show_points
     if key == ord('c'):
-        SHOW_CONVEX_HULL_FACE = not SHOW_CONVEX_HULL_FACE
+        show_conv_hull = not show_conv_hull
     if key == ord('i'):
-        SHOW_INFO = not SHOW_INFO
+        show_info = not show_info
     time.sleep(0.03)
     
 videoSteam.release()  
